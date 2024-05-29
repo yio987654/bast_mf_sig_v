@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanf.generator.form.mapper.SysFormItemMapper">
+    <resultMap id="sysFormItemMap" type="com.lanf.generator.form.model.SysFormItem" autoMapping="true">
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+            x1.form_id
+            ,x1.name
+            ,x1.description
+            ,x1.item_type
+            ,case when x1.item_type='int' then '整数(int)'
+                when x1.item_type='bigint' then '整数(bigint)'
+                when x1.item_type='tinyint' then '整数(tinyint)'
+                 when x1.item_type='varchar(500)' then '字符'
+                when x1.item_type='timestamp' then '日期'
+                when x1.item_type='text' then '文本(text)'
+                 when x1.item_type='decimal(20,10)' then '小数'
+                end typeName
+             ,case when x1.is_allow_null=0 then '是' else '否' end isAllow
+            ,x1.create_time
+            ,x1.update_time
+            ,x1.is_deleted
+            ,x1.id
+            ,x1.is_allow_null
+    </sql>
+    <sql id="middles">
+        from sys_form_item x1 inner join sys_form sf on x1.form_id=sf.id
+    </sql>
+    <sql id="conditions">
+        <if test="vo.formId != null and vo.formId != ''">
+            and x1.form_id=#{vo.formId}
+        </if>
+        <if test="vo.name != null and vo.name != ''">
+            and x1.name like CONCAT('%',#{vo.name},'%')
+        </if>
+        <if test="vo.tabName != null and vo.tabName != ''">
+            and sf.name=#{vo.tabName}
+        </if>
+        <if test="vo.description != null and vo.description != ''">
+            and x1.description like CONCAT('%',#{vo.description},'%')
+        </if>
+        <if test="vo.itemType != null and vo.itemType != ''">
+            and x1.item_type like CONCAT('%',#{vo.itemType},'%')
+        </if>
+        <if test="vo.createTimeBegin != null and vo.createTimeBegin != ''">
+            and x1.create_time >= #{vo.createTimeBegin}
+        </if>
+        <if test="vo.createTimeEnd != null and vo.createTimeEnd != ''">
+            and x1.create_time &lt;= #{vo.createTimeEnd}
+        </if>
+        <if test="vo.updateTimeBegin != null and vo.updateTimeBegin != ''">
+            and x1.create_time >= #{vo.updateTimeBegin}
+        </if>
+        <if test="vo.updateTimeEnd != null and vo.updateTimeEnd != ''">
+            and x1.create_time &lt;= #{vo.updateTimeEnd}
+        </if>
+        and x1.is_deleted = 0 order by x1.create_time desc
+    </sql>
+    <select id="selectPage" resultMap="sysFormItemMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+    <select id="queryList" resultMap="sysFormItemMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+</mapper>

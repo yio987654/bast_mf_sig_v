@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanf.business.mapper.TbStudentMapper">
+    <resultMap id="tbStudentMap" type="com.lanf.business.model.TbStudent" autoMapping="true">
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+            x1.name
+            ,x1.class_id,tbClass.name as className
+            ,x1.area_id,tbArea.name as areaName
+            ,x1.tree_id,tbTreeTest.name as treeName
+            ,x1.dept_id,sysDept.name as deptName
+            ,x1.create_time
+            ,x1.update_time
+            ,x1.is_deleted
+            ,x1.id
+        
+    </sql>
+    <sql id="middles">
+        from tb_student x1
+                left join (select * from tb_class where is_deleted=0) tbClass  on x1.class_id=tbClass.id
+                left join (select * from tb_area where is_deleted=0) tbArea  on x1.area_id=tbArea.id
+                left join (select * from tb_tree_test where is_deleted=0) tbTreeTest  on x1.tree_id=tbTreeTest.id
+                left join (select * from sys_dept where is_deleted=0) sysDept  on x1.dept_id=sysDept.id
+    </sql>
+    <sql id="conditions">
+                <if test="vo.name != null and vo.name != ''">
+              and x1.name like CONCAT('%',#{vo.name},'%')
+                </if>
+                <if test="vo.classId != null and vo.classId != ''">
+              and x1.class_id=#{vo.classId}
+                </if>
+                    <if test="vo.className != null and vo.className != ''">
+              and tbClass.name like CONCAT('%',#{vo.className},'%')
+                    </if>
+                <if test="vo.areaId != null and vo.areaId != ''">
+              and x1.area_id=#{vo.areaId}
+                </if>
+                    <if test="vo.areaName != null and vo.areaName != ''">
+              and tbArea.name like CONCAT('%',#{vo.areaName},'%')
+                    </if>
+                <if test="vo.treeId != null and vo.treeId != ''">
+              and x1.tree_id=#{vo.treeId}
+                </if>
+                    <if test="vo.treeName != null and vo.treeName != ''">
+              and tbTreeTest.name like CONCAT('%',#{vo.treeName},'%')
+                    </if>
+                        <if test="vo.treesId != null and vo.treesId != ''">
+               and exists (select 1 from tb_student_tree_rel tbStudentTreeRel where tbStudentTreeRel.is_deleted=0
+               and tbStudentTreeRel.student_id=x1.id and tbStudentTreeRel.trees_id=#{vo.treesId})
+                        </if>
+                        <if test="vo.courseId != null and vo.courseId != ''">
+               and exists (select 1 from tb_student_course tbStudentCourse where tbStudentCourse.is_deleted=0
+               and tbStudentCourse.student_id=x1.id and tbStudentCourse.course_id=#{vo.courseId})
+                        </if>
+                        <if test="vo.teacherId != null and vo.teacherId != ''">
+               and exists (select 1 from tb_student_teacher tbStudentTeacher where tbStudentTeacher.is_deleted=0
+               and tbStudentTeacher.student_id=x1.id and tbStudentTeacher.teacher_id=#{vo.teacherId})
+                        </if>
+            <choose>
+                <when test="vo.deptId != null and vo.deptId != ''">
+                    and  exists (select 1 from  sys_dept xd
+                    where x1.dept_id=xd.id
+                    and  xd.is_deleted=0 and xd.tree_path
+                    like CONCAT('%,',#{vo.deptId},',%'))
+                </when>
+                <when test="vo.curDeptIds!= null">
+                    and  exists (select 1 from  sys_dept xd
+                    where x1.dept_id=xd.id
+                    and  xd.is_deleted=0 and
+                    <foreach item="item" index="index" collection="vo.curDeptIds" open="(" separator=" or" close="))">
+                        xd.tree_path like CONCAT('%,',#{item},',%')
+                    </foreach>
+                </when>
+            </choose>
+        <if test="vo.createTimeBegin != null and vo.createTimeBegin != ''">
+              and x1.create_time >= #{vo.createTimeBegin}
+        </if>
+        <if test="vo.createTimeEnd != null and vo.createTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.createTimeEnd}
+        </if>
+        <if test="vo.updateTimeBegin != null and vo.updateTimeBegin != ''">
+             and x1.create_time >= #{vo.updateTimeBegin}
+        </if>
+        <if test="vo.updateTimeEnd != null and vo.updateTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.updateTimeEnd}
+        </if>
+             and x1.is_deleted = 0 order by x1.create_time desc
+    </sql>
+    <select id="selectPage" resultMap="tbStudentMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+    <select id="queryList" resultMap="tbStudentMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+        <select id="getById" resultMap="tbStudentMap">
+       select x.*,d.name as dept_name
+       from tb_student x left join (select id,name from sys_dept where is_deleted = 0)  d on x.dept_id = d.id
+       where x.id = #{id}
+        </select>
+</mapper>

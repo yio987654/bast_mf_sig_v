@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanf.business.mapper.TbTreeTest2Mapper">
+    <resultMap id="tbTreeTest2Map" type="com.lanf.business.model.TbTreeTest2" autoMapping="true">
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+            x1.name
+            ,x1.parent_id
+            ,x1.sort_value
+            ,x1.create_time
+            ,x1.update_time
+            ,x1.is_deleted
+            ,x1.id
+        
+    </sql>
+    <sql id="middles">
+        from tb_tree_test2 x1
+    </sql>
+    <sql id="conditions">
+                <if test="vo.name != null and vo.name != ''">
+              and x1.name like CONCAT('%',#{vo.name},'%')
+                </if>
+                <if test="vo.parentId != null and vo.parentId != ''">
+              and x1.parent_id=#{vo.parentId}
+                </if>
+                        <if test="vo.studentId != null and vo.studentId != ''">
+               and exists (select 1 from tb_student_tree_rel tbStudentTreeRel where tbStudentTreeRel.is_deleted=0
+               and tbStudentTreeRel.trees_id=x1.id and tbStudentTreeRel.student_id=#{vo.studentId})
+                        </if>
+        <if test="vo.createTimeBegin != null and vo.createTimeBegin != ''">
+              and x1.create_time >= #{vo.createTimeBegin}
+        </if>
+        <if test="vo.createTimeEnd != null and vo.createTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.createTimeEnd}
+        </if>
+        <if test="vo.updateTimeBegin != null and vo.updateTimeBegin != ''">
+             and x1.create_time >= #{vo.updateTimeBegin}
+        </if>
+        <if test="vo.updateTimeEnd != null and vo.updateTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.updateTimeEnd}
+        </if>
+             and x1.is_deleted = 0 order by x1.create_time desc
+    </sql>
+    <select id="selectPage" resultMap="tbTreeTest2Map">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+    <select id="queryList" resultMap="tbTreeTest2Map">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+</mapper>

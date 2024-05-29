@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanf.business.mapper.TbEmployeeMapper">
+    <resultMap id="tbEmployeeMap" type="com.lanf.business.model.TbEmployee" autoMapping="true">
+    </resultMap>
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+            x1.realname
+            ,x1.age
+            ,x1.born_date
+            ,x1.dept_id,sysDept.name as deptName
+            ,x1.create_time
+            ,x1.update_time
+            ,x1.is_deleted
+            ,x1.id
+        
+    </sql>
+    <sql id="middles">
+        from tb_employee x1
+                left join (select * from sys_dept where is_deleted=0) sysDept  on x1.dept_id=sysDept.id
+    </sql>
+    <sql id="conditions">
+                <if test="vo.realname != null and vo.realname != ''">
+              and x1.realname like CONCAT('%',#{vo.realname},'%')
+                </if>
+            <choose>
+                <when test="vo.deptId != null and vo.deptId != ''">
+                    and  exists (select 1 from  sys_dept xd
+                    where x1.dept_id=xd.id
+                    and  xd.is_deleted=0 and xd.tree_path
+                    like CONCAT('%,',#{vo.deptId},',%'))
+                </when>
+                <when test="vo.curDeptIds!= null">
+                    and  exists (select 1 from  sys_dept xd
+                    where x1.dept_id=xd.id
+                    and  xd.is_deleted=0 and
+                    <foreach item="item" index="index" collection="vo.curDeptIds" open="(" separator=" or" close="))">
+                        xd.tree_path like CONCAT('%,',#{item},',%')
+                    </foreach>
+                </when>
+            </choose>
+        <if test="vo.createTimeBegin != null and vo.createTimeBegin != ''">
+              and x1.create_time >= #{vo.createTimeBegin}
+        </if>
+        <if test="vo.createTimeEnd != null and vo.createTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.createTimeEnd}
+        </if>
+        <if test="vo.updateTimeBegin != null and vo.updateTimeBegin != ''">
+             and x1.create_time >= #{vo.updateTimeBegin}
+        </if>
+        <if test="vo.updateTimeEnd != null and vo.updateTimeEnd != ''">
+             and x1.create_time &lt;= #{vo.updateTimeEnd}
+        </if>
+             and x1.is_deleted = 0 order by x1.create_time desc
+    </sql>
+    <select id="selectPage" resultMap="tbEmployeeMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+    <select id="queryList" resultMap="tbEmployeeMap">
+        select <include refid="columns" />
+        <include refid="middles" />
+        <where>
+            <include refid="conditions" />
+        </where>
+    </select>
+        <select id="getById" resultMap="tbEmployeeMap">
+       select x.*,d.name as dept_name
+       from tb_employee x left join (select id,name from sys_dept where is_deleted = 0)  d on x.dept_id = d.id
+       where x.id = #{id}
+        </select>
+</mapper>
